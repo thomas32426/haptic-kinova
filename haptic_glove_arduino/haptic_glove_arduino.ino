@@ -1,6 +1,6 @@
 /*
 Read voltages from flex sensors (Thumb, Middle, Index) (Respective pins A2, A1, A0)
-Move servos based upon ROS message.
+Publishes flex sensor data and moves servos based upon ROS messages.
 */
 
 #define USE_USBCON
@@ -20,11 +20,12 @@ Servo thumbServo;
 Servo indexServo;
 Servo middleServo;
 
+// Initial servo values
 int thumbAngle = 0;
 int indexAngle = 0;
 int middleAngle = 180;
 
-// Create the node handle
+// Create the node handle.
 ros::NodeHandle nh;
 
 // When a servo_angles message comes in, this function runs.
@@ -35,7 +36,7 @@ void fingersCallback(const std_msgs::Int16MultiArray& fingerMsg)
   middleAngle = fingerMsg.data[2];
 }
 
-// Subscribe to the topic and respond with the callback function
+// Subscribe to the topic and respond with the callback function.
 ros::Subscriber<std_msgs::Int16MultiArray> sub("servo_angles", fingersCallback);
 
 // Publish the glove data as a topic called "glove".
@@ -43,7 +44,7 @@ ros::Publisher glove("glove", &fingers_position);
 
 // the setup routine runs once when you press reset:
 void setup() {
-  // initialize serial communication at 9600 bits per second:
+  // initialize serial communication at 9600 bits per second
   Serial.begin(9600);
 
   // Arduino Pro Micro
@@ -56,6 +57,7 @@ void setup() {
   nh.advertise(glove);
   nh.subscribe(sub);
 
+  // Create array to store flex sensor data
   myDim.label = "flex_sensors_readings";
   myDim.size = 3;
   myDim.stride = 3;
@@ -70,19 +72,19 @@ void setup() {
 // the loop routine runs over and over again forever:
 void loop() {
   // Read the input on analog pins
-  int indexSensor = analogRead(A0); // Index finger
-  int middleSensor = analogRead(A1); // Middle finger
-  int thumbSensor = analogRead(A2); // Thumb
+  int indexSensor = analogRead(A0);
+  int middleSensor = analogRead(A1);
+  int thumbSensor = analogRead(A2);
 
-  // Update data to be published through sensors' reads.
+  // Update data to be published with sensors inputs
   fingers_position.data[0] = thumbSensor;
   fingers_position.data[1] = indexSensor;
   fingers_position.data[2] = middleSensor;
   
-  // Publish data
+  // Publish flex sensor data
   glove.publish(&fingers_position);
 
-  // Set servo angles
+  // Set servo angles from subscribed ROS message
   thumbServo.write(thumbAngle);
   indexServo.write(indexAngle);
   middleServo.write(middleAngle);
